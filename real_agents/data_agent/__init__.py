@@ -11,3 +11,4 @@ from real_agents.data_agent.executors.kaggle_data_loading_executor import Kaggle
 from real_agents.data_agent.python.base import PythonChain
 from real_agents.data_agent.sql.base import SQLDatabaseChain
 from real_agents.adapters.schema import SQLDatabase
+from real_agents.data_agent.executors.rag_executor import search_from_vectordb

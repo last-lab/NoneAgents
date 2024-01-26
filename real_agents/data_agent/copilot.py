@@ -25,6 +25,14 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 
+import chromadb
+from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain_community.vectorstores.chroma import Chroma
+from langchain.memory import VectorStoreRetrieverMemory
+from langchain.chains import RetrievalQA
+
+import os
+
 
 class ExceptionTool(BaseTool):
     name = "_Exception"
@@ -48,12 +56,14 @@ class ExceptionTool(BaseTool):
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using data tools."""
 
-    output_parser: ConversationOutputParser = Field(default_factory=ConversationOutputParser())
+    output_parser: ConversationOutputParser = Field(
+        default_factory=ConversationOutputParser())
     template_tool_response: str = TEMPLATE_TOOL_RESPONSE
     continue_model: Optional[str] = None
 
     @classmethod
-    def _get_default_output_parser(cls, **kwargs: Any) -> ConversationOutputParser:
+    def _get_default_output_parser(cls,
+                                   **kwargs: Any) -> ConversationOutputParser:
         return ConversationOutputParser()
 
     @property
@@ -85,7 +95,8 @@ class ConversationalChatAgent(Agent):
         output_parser: Optional[BaseOutputParser] = None,
     ) -> BasePromptTemplate:
         # tools
-        tool_strings = "\n".join([f"> {tool.name}: {tool.description}" for tool in tools])
+        tool_strings = "\n".join(
+            [f"> {tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         _output_parser = output_parser or cls._get_default_output_parser()
 
@@ -106,10 +117,13 @@ class ConversationalChatAgent(Agent):
             HumanMessagePromptTemplate.from_template(final_prompt),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables,
+                                  messages=messages)
 
     @override
-    def _construct_scratchpad(self, intermediate_steps: List[Tuple[AgentAction, str]]) -> List[BaseMessage]:
+    def _construct_scratchpad(
+        self, intermediate_steps: List[Tuple[AgentAction,
+                                             str]]) -> List[BaseMessage]:
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts: List[BaseMessage] = []
 
@@ -121,10 +135,11 @@ class ConversationalChatAgent(Agent):
             observation = full_observation
             if isinstance(full_observation, DataModel):
                 llm_raw_observation = full_observation.get_llm_side_data()
-                observation = MessageDataModel.extract_tool_response_for_llm(llm_raw_observation)
+                observation = MessageDataModel.extract_tool_response_for_llm(
+                    llm_raw_observation)
                 tool_response = self.template_tool_response.format(
-                    observation=str(observation), tool_names=self.allowed_tools
-                )
+                    observation=str(observation),
+                    tool_names=self.allowed_tools)
                 if idx == len(intermediate_steps) - 1:
                     content.append(tool_response)
                 else:
@@ -132,7 +147,9 @@ class ConversationalChatAgent(Agent):
         content_str = "\n".join(content)
         thoughts.append(AIMessage(content=content_str))
         if self.continue_model is not None and len(intermediate_steps) != 0:
-            thoughts.append(HumanMessage(content=fake_continue_prompt[self.continue_model]))
+            thoughts.append(
+                HumanMessage(
+                    content=fake_continue_prompt[self.continue_model]))
         return thoughts
 
     @override
@@ -153,16 +170,19 @@ class ConversationalChatAgent(Agent):
         Returns:
             Action specifying what tool to use.
         """
+
         full_inputs = self.get_full_inputs(intermediate_steps, **kwargs)
         system_prompt = self.llm_chain.prompt.messages[0].format().content
         system_prompt_tokens = MessageDataModel._count_tokens(system_prompt)
         max_tokens = 8000
         max_gen_tokens = 1000
         # FIXME: need more accurate token limit calculation
+
         full_inputs = MessageDataModel.truncate_chat_history(
-            full_inputs, max_token=max_tokens - system_prompt_tokens - max_gen_tokens
-        )
-        full_output = self.llm_chain.predict(callbacks=callbacks, **full_inputs)
+            full_inputs,
+            max_token=max_tokens - system_prompt_tokens - max_gen_tokens)
+        full_output = self.llm_chain.predict(callbacks=callbacks,
+                                             **full_inputs)
 
         return self.output_parser.parse(full_output)
 
@@ -182,6 +202,7 @@ class ConversationalChatAgent(Agent):
         cls._validate_tools(tools)
 
         _output_parser = output_parser or cls._get_default_output_parser()
+
         prompt = cls.create_prompt(
             tools,
             system_message=system_message,
@@ -189,10 +210,12 @@ class ConversationalChatAgent(Agent):
             input_variables=input_variables,
             output_parser=_output_parser,
         )
+
         llm_chain = LLMChain(
             llm=llm,
             prompt=prompt,
         )
+        
         tool_names = [tool.name for tool in tools]
         return cls(
             llm_chain=llm_chain,

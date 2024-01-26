@@ -32,16 +32,18 @@ from real_agents.data_agent import CodeGenerationExecutor, KaggleDataLoadingExec
 from real_agents.adapters.memory import ConversationReActBufferMemory, \
     ReadOnlySharedStringMemory
 
+from real_agents.data_agent import search_from_vectordb
+
 
 def create_interaction_executor(
-        grounding_source_dict: Dict[str, DataModel],
-        code_interpreter_languages: List[str],
-        code_interpreter_tools: List[str],
-        llm: BaseLanguageModel,
-        llm_name: str,
-        user_id: str = None,
-        chat_id: str = None,
-        code_execution_mode: str = "local",
+    grounding_source_dict: Dict[str, DataModel],
+    code_interpreter_languages: List[str],
+    code_interpreter_tools: List[str],
+    llm: BaseLanguageModel,
+    llm_name: str,
+    user_id: str = None,
+    chat_id: str = None,
+    code_execution_mode: str = "local",
 ) -> AgentExecutor:
     """Creates an agent executor for interaction.
 
@@ -60,20 +62,22 @@ def create_interaction_executor(
 
     """
     # Initialize Memory
-    memory = ConversationReActBufferMemory(
-        memory_key="chat_history", return_messages=True, llm=llm, max_token_limit=3500
-    )
+    memory = ConversationReActBufferMemory(memory_key="chat_history",
+                                           return_messages=True,
+                                           llm=llm,
+                                           max_token_limit=3500)
     read_only_memory = ReadOnlySharedStringMemory(memory=memory)
 
     # Initialize tools(executors)
     basic_chat_executor = ChatExecutor()
     python_code_generation_executor = CodeGenerationExecutor(
         programming_language="python", memory=read_only_memory)
-    sql_code_generation_executor = CodeGenerationExecutor(programming_language="sql",
-                                                          memory=read_only_memory)
+    sql_code_generation_executor = CodeGenerationExecutor(
+        programming_language="sql", memory=read_only_memory)
     echart_code_generation_executor = CodeGenerationExecutor(
-        programming_language="python", memory=read_only_memory, usage="echarts"
-    )
+        programming_language="python",
+        memory=read_only_memory,
+        usage="echarts")
     kaggle_data_loading_executor = KaggleDataLoadingExecutor()
 
     def run_python_code_builder(term: str) -> Union[Dict, DataModel]:
@@ -81,7 +85,9 @@ def create_interaction_executor(
             # Only TableDataModel are allowed as input to python
             # input_grounding_source = [gs for _, gs in grounding_source_dict.items()
             # if isinstance(gs, TableDataModel)]
-            input_grounding_source = [gs for gs in grounding_source_dict.values()]
+            input_grounding_source = [
+                gs for gs in grounding_source_dict.values()
+            ]
             # Get the result
             results = python_code_generation_executor.run(
                 user_intent=term,
@@ -93,7 +99,8 @@ def create_interaction_executor(
                 jupyter_kernel_pool=jupyter_kernel_pool,
             )
 
-            logger.bind(msg_head=f"PythonCodeBuilder results({llm})").debug(results)
+            logger.bind(
+                msg_head=f"PythonCodeBuilder results({llm})").debug(results)
 
             if results["result"]["success"]:
                 if results["result"]["result"] is not None:
@@ -104,25 +111,31 @@ def create_interaction_executor(
                     raw_output = ""
                 observation = JsonDataModel.from_raw_data(
                     {
-                        "success": True,
-                        "result": raw_output,
-                        "images": results["result"]["outputs"] if ".show()" in results[
-                            "intermediate_steps"] else [],
-                        "intermediate_steps": results["intermediate_steps"],
+                        "success":
+                        True,
+                        "result":
+                        raw_output,
+                        "images":
+                        results["result"]["outputs"]
+                        if ".show()" in results["intermediate_steps"] else [],
+                        "intermediate_steps":
+                        results["intermediate_steps"],
                     },
                     filter_keys=["images"],
                 )
             else:
-                observation = JsonDataModel.from_raw_data(
-                    {
-                        "success": False,
-                        "result": results["result"]["error_message"],
-                        "intermediate_steps": results["intermediate_steps"],
-                    }
-                )
+                observation = JsonDataModel.from_raw_data({
+                    "success":
+                    False,
+                    "result":
+                    results["result"]["error_message"],
+                    "intermediate_steps":
+                    results["intermediate_steps"],
+                })
             return observation
         except Exception as e:
-            logger.bind(msg_head=f"PythonCodeBuilder error({llm})").error(str(e))
+            logger.bind(msg_head=f"PythonCodeBuilder error({llm})").error(
+                str(e))
 
             traceback.print_exc()
             results = basic_chat_executor.run(user_intent=term, llm=llm)
@@ -132,15 +145,15 @@ def create_interaction_executor(
         try:
 
             def convert_grounding_source_as_db(
-                    grounding_source_dict: Dict[str, DataModel]
+                grounding_source_dict: Dict[str, DataModel]
             ) -> Union[List[TableDataModel], DatabaseDataModel]:
                 db_grounding_source = [
-                    gs for _, gs in grounding_source_dict.items() if
-                    isinstance(gs, DatabaseDataModel)
+                    gs for _, gs in grounding_source_dict.items()
+                    if isinstance(gs, DatabaseDataModel)
                 ]
                 table_grounding_source = [
-                    gs for _, gs in grounding_source_dict.items() if
-                    isinstance(gs, TableDataModel)
+                    gs for _, gs in grounding_source_dict.items()
+                    if isinstance(gs, TableDataModel)
                 ]
                 assert len(db_grounding_source) <= 1
                 if len(table_grounding_source) == 0:
@@ -154,7 +167,8 @@ def create_interaction_executor(
                             # into DatabaseDataModel.
                             if t_gs.db_view is None:
                                 t_gs.set_db_view(
-                                    DatabaseDataModel.from_table_data_model(t_gs))
+                                    DatabaseDataModel.from_table_data_model(
+                                        t_gs))
                             db_gs = t_gs.db_view
                             db_grounding_source.append(db_gs)
                         else:
@@ -171,23 +185,31 @@ def create_interaction_executor(
                 llm=llm,
             )
 
-            logger.bind(msg_head=f"SQLQueryBuilder results({llm})").debug(results)
+            logger.bind(
+                msg_head=f"SQLQueryBuilder results({llm})").debug(results)
 
             if results["result"]["success"]:
                 observation = JsonDataModel.from_raw_data({
-                    "success": True,
-                    "result": results["result"]["result"],
-                    "intermediate_steps": results["intermediate_steps"],
+                    "success":
+                    True,
+                    "result":
+                    results["result"]["result"],
+                    "intermediate_steps":
+                    results["intermediate_steps"],
                 })
             else:
                 observation = JsonDataModel.from_raw_data({
-                    "success": False,
-                    "result": results["result"]["error_message"],
-                    "intermediate_steps": results["intermediate_steps"],
+                    "success":
+                    False,
+                    "result":
+                    results["result"]["error_message"],
+                    "intermediate_steps":
+                    results["intermediate_steps"],
                 })
             return observation
         except Exception as e:
-            logger.bind(msg_head=f"SQLQueryBuilder results({llm})").error(str(e))
+            logger.bind(msg_head=f"SQLQueryBuilder results({llm})").error(
+                str(e))
 
             traceback.print_exc()
             results = basic_chat_executor.run(user_intent=term, llm=llm)
@@ -195,8 +217,10 @@ def create_interaction_executor(
 
     def run_echarts_interactive_plotter(term: str) -> Union[Dict, DataModel]:
         try:
-            input_grounding_source = [gs for _, gs in grounding_source_dict.items() if
-                                      isinstance(gs, TableDataModel)]
+            input_grounding_source = [
+                gs for _, gs in grounding_source_dict.items()
+                if isinstance(gs, TableDataModel)
+            ]
             results = echart_code_generation_executor.run(
                 user_intent=term,
                 llm=llm,
@@ -207,8 +231,8 @@ def create_interaction_executor(
                 jupyter_kernel_pool=jupyter_kernel_pool,
             )
 
-            logger.bind(msg_head=f"PlotInteractivePlotter results({llm})").debug(
-                results)
+            logger.bind(msg_head=f"PlotInteractivePlotter results({llm})"
+                        ).debug(results)
 
             if results["result"]["success"]:
                 results = JsonDataModel.from_raw_data(
@@ -221,16 +245,18 @@ def create_interaction_executor(
                     filter_keys=["result", "echarts"],
                 )
             else:
-                results = JsonDataModel.from_raw_data(
-                    {
-                        "success": False,
-                        "result": results["result"]["error_message"],
-                        "intermediate_steps": results["intermediate_steps"],
-                    }
-                )
+                results = JsonDataModel.from_raw_data({
+                    "success":
+                    False,
+                    "result":
+                    results["result"]["error_message"],
+                    "intermediate_steps":
+                    results["intermediate_steps"],
+                })
             return results
         except Exception as e:
-            logger.bind(msg_head=f"PlotInteractivePlotter error({llm})").error(str(e))
+            logger.bind(msg_head=f"PlotInteractivePlotter error({llm})").error(
+                str(e))
 
             results = basic_chat_executor.run(user_intent=term, llm=llm)
             return results["result"]
@@ -241,25 +267,47 @@ def create_interaction_executor(
                 user_intent=term,
                 llm=llm,
             )
-            logger.bind(msg_head=f"KaggleDataLoader results({llm})").debug(results)
+            logger.bind(
+                msg_head=f"KaggleDataLoader results({llm})").debug(results)
 
             results = JsonDataModel.from_raw_data(
                 {
                     "success": True,
                     "kaggle_action": results["kaggle_action"],
                     "kaggle_output_info": results["kaggle_output_info"],
-                },
-            )
+                }, )
             return results
         except Exception as e:
-            logger.bind(msg_head=f"KaggleDataLoader results({llm})").error(str(e))
+            logger.bind(msg_head=f"KaggleDataLoader results({llm})").error(
+                str(e))
+
+            traceback.print_exc()
+            results = basic_chat_executor.run(user_intent=term, llm=llm)
+            return results["result"]
+
+    def run_rag(term: str) -> Union[Dict, DataModel]:
+        try:
+            docs = search_from_vectordb(term)
+            results = {"retieval_output": docs}
+            logger.bind(msg_head=f"rag results({llm})").debug(results)
+
+            results = JsonDataModel.from_raw_data(
+                {
+                    "success": True,
+                    "result": docs,
+                    "rag_results": docs,
+                }, )
+            return results
+        except Exception as e:
+            logger.bind(msg_head=f"rag results({llm})").error(str(e))
 
             traceback.print_exc()
             results = basic_chat_executor.run(user_intent=term, llm=llm)
             return results["result"]
 
     tool_dict = {
-        "PythonCodeBuilder": Tool(
+        "PythonCodeBuilder":
+        Tool(
             name="PythonCodeBuilder",
             func=run_python_code_builder,
             description="""
@@ -269,7 +317,8 @@ Output: A Python program + its execution result to solve the presented problem o
 Note: The tool MUST be used whenever you want to generate & execute Python code.
                 """,
         ),
-        "SQLQueryBuilder": Tool(
+        "SQLQueryBuilder":
+        Tool(
             name="SQLQueryBuilder",
             func=run_sql_code_builder,
             description="""
@@ -279,7 +328,8 @@ Output: A SQL program, ready to execute on the specified database table, and its
 Note: It is ALWAYS preferable to use the tool whenever you want to generate SQL query & execute the SQL query.
             """,
         ),
-        "Echarts": Tool(
+        "Echarts":
+        Tool(
             name="Echarts",
             func=run_echarts_interactive_plotter,
             description="""
@@ -288,13 +338,24 @@ Input: A natural language query detailing your desired visualization, no other w
 Output: An Echarts script, specifically tailored for your data, that generates an interactive chart upon execution.
 Note: Currently, this tool supports only the listed chart types. Please ensure your desired visualization aligns with these options to experience the full capabilities of this dynamic Echarts tool.""",
         ),
-        "KaggleDataLoader": Tool(
+        "KaggleDataLoader":
+        Tool(
             name="KaggleDataLoader",
             func=run_kaggle_data_loader,
             description="""
 Description: The KaggleDataLoader tool allows you to seamlessly connect to Kaggle datasets. It allows you to load specific datasets by providing the exact dataset path, or it can aid in the search and retrieval of datasets based on the information given in your user input, providing you with a vast array of data sources for your projects.
 Input: A natural language intent that may mention path of the Kaggle dataset, or some keyword or other relevant information about the dataset you are interested in.
 Output: The action you want to perform, and the extracted path or searched relevant datasets depending on your input.
+""",
+        ),
+        "Rag":
+        Tool(
+            name="Retrieval-AugmentedGeneration",
+            func=run_rag,
+            description="""
+            Description: This tool is specifically designed to query natural language data, it can be translated into operations against vector databases based on your natural language queries and executed to get results. It is particularly suitable for handling high-dimensional data queries, similarity searches, and vector space analysis, and quickly finding the data with the highest similarity to the input. When Retrieval-Augmented Generation tool is used, the response of RAG tool should be consider as the key knowledge source of your answer.
+Input: A piece of natural language that needs to be queried;
+Output: Some of the most similar natural language data to the input;
 """,
         ),
     }
@@ -308,7 +369,10 @@ Output: The action you want to perform, and the extracted path or searched relev
 
     # Build the chat agent with LLM and tools
     continue_model = llm_name if llm_name in NEED_CONTINUE_MODEL else None
-    interaction_executor = initialize_agent(tools, llm, continue_model, memory=memory,
+    interaction_executor = initialize_agent(tools,
+                                            llm,
+                                            continue_model,
+                                            memory=memory,
                                             verbose=True)
     return interaction_executor
 
@@ -323,7 +387,8 @@ def chat() -> Response | Dict:
         chat_id = request_json["chat_id"]
         user_intent = request_json["user_intent"]
         parent_message_id = int(request_json["parent_message_id"])
-        code_interpreter_languages = request_json.get("code_interpreter_languages", [])
+        code_interpreter_languages = request_json.get(
+            "code_interpreter_languages", [])
         code_interpreter_tools = request_json.get("code_interpreter_tools", [])
         api_call = request_json.get("api_call", None)
         llm_name = request_json["llm_name"]
@@ -338,20 +403,22 @@ def chat() -> Response | Dict:
         stream_handler = AgentStreamingStdOutCallbackHandler()
         llm = get_llm(llm_name, **kwargs)
 
-        logger.bind(user_id=user_id, chat_id=chat_id, api="/chat",
+        logger.bind(user_id=user_id,
+                    chat_id=chat_id,
+                    api="/chat",
                     msg_head="Request json").debug(request_json)
 
         if api_call:
             # Load/init grounding source
-            grounding_source_dict = grounding_source_pool.get_pool_info_with_id(user_id,
-                                                                                chat_id,
-                                                                                default_value={})
+            grounding_source_dict = grounding_source_pool.get_pool_info_with_id(
+                user_id, chat_id, default_value={})
 
             # Find the mainstay message list from leaf to root
             activated_message_list = message_pool.get_activated_message_list(
-                user_id, chat_id, default_value=list(),
-                parent_message_id=parent_message_id
-            )
+                user_id,
+                chat_id,
+                default_value=list(),
+                parent_message_id=parent_message_id)
             assert api_call["api_name"] == "DataProfiling"
             ai_message_id = message_id_register.add_variable("")
             file_node = api_call["args"]["activated_file"]
@@ -370,18 +437,17 @@ def chat() -> Response | Dict:
                         user_id=DEFAULT_USER_ID,
                         chat_id=api_call["args"]["chat_id"],
                         message_list=activated_message_list,
-                        parent_message_id=api_call["args"]["parent_message_id"],
+                        parent_message_id=api_call["args"]
+                        ["parent_message_id"],
                         llm=llm,
                         app_type="copilot",
                     ),
                     content_type="application/json",
-                )
-            )
+                ))
         else:
             # Load/init grounding source
-            grounding_source_dict = grounding_source_pool.get_pool_info_with_id(user_id,
-                                                                                chat_id,
-                                                                                default_value={})
+            grounding_source_dict = grounding_source_pool.get_pool_info_with_id(
+                user_id, chat_id, default_value={})
             # Build executor and run chat
             interaction_executor = create_interaction_executor(
                 grounding_source_dict=grounding_source_dict,
@@ -395,11 +461,12 @@ def chat() -> Response | Dict:
             )
             # Find the mainstay message list from leaf to root
             activated_message_list = message_pool.get_activated_message_list(
-                user_id, chat_id, default_value=list(),
-                parent_message_id=parent_message_id
-            )
-            message_pool.load_agent_memory_from_list(interaction_executor.memory,
-                                                     activated_message_list)
+                user_id,
+                chat_id,
+                default_value=list(),
+                parent_message_id=parent_message_id)
+            message_pool.load_agent_memory_from_list(
+                interaction_executor.memory, activated_message_list)
             human_message_id = message_id_register.add_variable(user_intent)
             ai_message_id = message_id_register.add_variable("")
             return stream_with_context(
@@ -415,21 +482,22 @@ def chat() -> Response | Dict:
                         parent_message_id=parent_message_id,
                         llm_name=llm_name,
                         stream_handler=stream_handler,
-                        app_type="copilot"
-                    ),
+                        app_type="copilot"),
                     content_type="application/json",
-                )
-            )
+                ))
 
     except Exception as e:
         try:
-            logger.bind(user_id=user_id, chat_id=chat_id, api="/chat",
+            logger.bind(user_id=user_id,
+                        chat_id=chat_id,
+                        api="/chat",
                         msg_head="Chat error").error(str(e))
             import traceback
 
             traceback.print_exc()
         except:
             # if user_id & chat_id not found, unauth err
-            return Response(response=None, status=f"{UNAUTH} Invalid Authentication")
+            return Response(response=None,
+                            status=f"{UNAUTH} Invalid Authentication")
         return Response(response=None,
                         status=f"{OVERLOAD} Server is currently overloaded")
