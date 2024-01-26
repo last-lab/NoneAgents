@@ -49,6 +49,15 @@ DATA_TOOLS = [
         "icon": "",
         "description": "Intelligent profiling for your data",
     },
+    {
+        "type": "tool",
+        "id": "8f8e8dbc-ae5b-4950-9f4f-123456879126",
+        "name": "Rag",
+        "name_for_human": "Rag",
+        "pretty_name_for_human": "Rag",
+        "icon": "",
+        "description": "Hi, I'm a Rag tool",
+    },
 ]
 
 
