@@ -18,6 +18,6 @@ def search_from_vectordb(query):
             collection_name=collection,
             embedding_function=embedding_function,
         )
-        docs = langchain_chroma.similarity_search(query, k=6)
+        docs = langchain_chroma.similarity_search(query, k=8)
         doc_str = "".join(elem.page_content + "\n" for elem in docs)
         return doc_str
