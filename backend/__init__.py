@@ -2,6 +2,7 @@
 # mypy: ignore-errors
 
 from backend.api import (
+    chat_security,
     chat_copilot,
     chat_plugin,
     chat_webot,

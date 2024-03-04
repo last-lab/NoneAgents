@@ -7,7 +7,7 @@ export const OPENAI_API_HOST =
 
 export const BACKEND_ENDPOINT =
   process.env.NEXT_PUBLIC_BACKEND_ENDPOINT ||
-  ('http://localhost:8800' as const);
+  ('http://localhost:8000' as const);
 export const API_ENDPOINT = `${BACKEND_ENDPOINT}/api` as const;
 
 export const API_UPLOAD = `${API_ENDPOINT}/upload` as const;
@@ -60,6 +60,8 @@ export const API_KAGGLE_DOWNLOAD_DATASET = `${API_ENDPOINT}/kaggle/download_data
 export const API_SET_EXAMPLES = `${API_ENDPOINT}/set_default_examples` as const;
 export const API_GET_LLM_LIST = `${API_ENDPOINT}/llm_list` as const;
 export const API_GET_QUOTA = `${API_ENDPOINT}/user_quota` as const;
+
+export const API_SECURITY_CHAT = `${API_ENDPOINT}/security_chat` as const;
 
 export const DEFAULT_TEMPERATURE = parseFloat(
   process.env.NEXT_PUBLIC_DEFAULT_TEMPERATURE || '0.7',
