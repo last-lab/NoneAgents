@@ -17,7 +17,7 @@ export interface LLM {
 export enum OpenAgentID {
   SECURITY_AGENT = 'security-agent',
   DATA_AGENT = 'data-agent',
-  // PLUGINS_AGENT = 'plugins-agent',
+  PLUGINS_AGENT = 'plugins-agent',
   // WEB_AGENT = 'web-agent',
 }
 
@@ -39,13 +39,13 @@ export const OpenAgents: Record<OpenAgentID, OpenAgent> = {
     tokenLimit: 4000,
     llm: undefined,
   },
-  // [OpenAgentID.PLUGINS_AGENT]: {
-  //   id: OpenAgentID.PLUGINS_AGENT,
-  //   name: 'Plugins Agent',
-  //   maxLength: 1024,
-  //   tokenLimit: 4000,
-  //   llm: undefined,
-  // },
+  [OpenAgentID.PLUGINS_AGENT]: {
+    id: OpenAgentID.PLUGINS_AGENT,
+    name: 'Plugins Agent',
+    maxLength: 1024,
+    tokenLimit: 4000,
+    llm: undefined,
+  },
   // [OpenAgentID.WEB_AGENT]: {
   //   id: OpenAgentID.WEB_AGENT,
   //   name: 'Web Agent',
