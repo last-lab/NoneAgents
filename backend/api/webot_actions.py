@@ -16,7 +16,7 @@ def get_action() -> Response:
     # Get request parameters
     request_json = request.get_json()
     processed_html = request_json["processed_html"]
-    llm = get_llm("gpt-4")
+    llm = get_llm("gpt-4-1106-preview")
     result = webot.run(processed_html, llm=llm)
     save_webot_to_redis(user_id=user_id, chat_id=chat_id, webot=webot)
 

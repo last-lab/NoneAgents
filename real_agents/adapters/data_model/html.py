@@ -182,5 +182,5 @@ class HTMLDataModel(DataModel):
 
     def get_llm_side_data(self) -> str:
         html_string = self.raw_data
-        truncated_html_string = truncate_html_by_tokens(html_string, 5000, "gpt-4")
+        truncated_html_string = truncate_html_by_tokens(html_string, 5000, "gpt-4-1106-preview")
         return truncated_html_string
