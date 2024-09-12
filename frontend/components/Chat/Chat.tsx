@@ -379,6 +379,12 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                           </div>
                         )}
                         {selectedConversation.agent.id ==
+                          'security-agent' && (
+                          <div className="absolute left-[10rem] top-[-4px]">
+                            <CodeInterpreterPluginSelect />
+                          </div>
+                        )}
+                        {selectedConversation.agent.id ==
                           'data-agent' && (
                           <div className="absolute left-[10rem] top-[-4px]">
                             <CodeInterpreterPluginSelect />

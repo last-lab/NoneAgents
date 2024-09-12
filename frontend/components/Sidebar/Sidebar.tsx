@@ -89,7 +89,7 @@ const Sidebar = <T,>({
               fontWeight: 400,
             }}
           >
-            XLANG
+
           </span>
           <CloseSidebarButton onClick={toggleOpen} side={side} />
         </div>

@@ -982,6 +982,7 @@ const Home = ({
     dispatch({ field: 'codeInterpreterPluginsIsSelected', value: {
       "0c135359-af7e-473b-8425-1393d2943b57": true,   // python
       "8f8e8dbc-ae5b-4950-9f4f-7f5238978806": true,   // data profiling
+      "8f8e8dbc-ae5b-4950-9f4f-123456879126": true, // Rag
     } });
 
     const updatedConversationNameList: ConversationNameListItem[] = JSON.parse(
@@ -1903,7 +1904,7 @@ const Home = ({
           name="viewport"
           content="height=device-height ,width=device-width, initial-scale=1, user-scalable=no"
         />
-        <link rel="icon" href="/xlang.ico" />
+        <link rel="icon" href="" />
       </Head>
       {selectedConversation && (
         <main
@@ -1936,7 +1937,7 @@ const Home = ({
                     <span className="font-[700]">Performance Limitations:&nbsp;</span>This chat interface is a prototype of our ongoing research preview and is not produced by a professional development team. Consequently, it may have limitations in its performance. We appreciate your understanding and patience as we continue to improve it.
                   </Typography>
                   <Typography variant="body1" className='font-[Montserrat] mt-5' align='right' gutterBottom>
-                    XLang Team
+
                   </Typography>
                 </div>
                 <IconButton

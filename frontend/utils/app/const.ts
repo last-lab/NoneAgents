@@ -61,6 +61,8 @@ export const API_SET_EXAMPLES = `${API_ENDPOINT}/set_default_examples` as const;
 export const API_GET_LLM_LIST = `${API_ENDPOINT}/llm_list` as const;
 export const API_GET_QUOTA = `${API_ENDPOINT}/user_quota` as const;
 
+export const API_SECURITY_CHAT = `${API_ENDPOINT}/security_chat` as const;
+
 export const DEFAULT_TEMPERATURE = parseFloat(
   process.env.NEXT_PUBLIC_DEFAULT_TEMPERATURE || '0.7',
 );

@@ -420,10 +420,10 @@ class ChatOpenAI(BaseChatModel):
             # gpt-3.5-turbo may change over time.
             # Returning num tokens assuming gpt-3.5-turbo-0301.
             model = "gpt-3.5-turbo-0301"
-        elif model == "gpt-4":
+        elif model == "gpt-4-1106-preview":
             # gpt-4 may change over time.
             # Returning num tokens assuming gpt-4-0314.
-            model = "gpt-4-0314"
+            model = "gpt-4-1106-preview"
 
         # Returns the number of tokens used by a list of messages.
         try:
@@ -437,7 +437,7 @@ class ChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model == "gpt-4-0314":
+        elif model == "gpt-4-1106-preview":
             tokens_per_message = 3
             tokens_per_name = 1
         else:

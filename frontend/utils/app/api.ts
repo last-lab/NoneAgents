@@ -1,9 +1,12 @@
 import { Plugin, PluginID } from '@/types/plugin';
 
-import { API_CHAT, API_RECOMMEND, API_CHAT_XLANG, API_CHAT_XLANG_PLUGIN , API_CHAT_XLANG_WEBOT} from './const';
+import { API_CHAT, API_RECOMMEND, API_CHAT_XLANG, API_CHAT_XLANG_PLUGIN , API_CHAT_XLANG_WEBOT, API_SECURITY_CHAT} from './const';
 import { OpenAgent, OpenAgentID } from '@/types/agent';
 
 export const getEndpoint = (agent: OpenAgent) => {
+  if (agent.id === OpenAgentID.SECURITY_AGENT) {
+    return API_SECURITY_CHAT;
+  }
   if (agent.id === OpenAgentID.DATA_AGENT) {
     return API_CHAT;
   }

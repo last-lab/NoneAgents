@@ -48,7 +48,7 @@ def process_one_property(name: str, value_dict: Dict[str, Any]) -> str:
 
 
 class SpecModel:
-    def __init__(self, yaml_path: str, model_name: str = "gpt-4") -> None:
+    def __init__(self, yaml_path: str, model_name: str = "gpt-4-1106-preview") -> None:
         # fixme: Must move out the logic of yaml path
         self.yaml_path = yaml_path
         self.full_spec = APIYamlModel.from_yaml(yaml_path).to_json()

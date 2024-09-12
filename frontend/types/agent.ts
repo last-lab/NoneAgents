@@ -15,15 +15,23 @@ export interface LLM {
 }
 
 export enum OpenAgentID {
+  SECURITY_AGENT = 'security-agent',
   DATA_AGENT = 'data-agent',
   PLUGINS_AGENT = 'plugins-agent',
-  WEB_AGENT = 'web-agent',
+  // WEB_AGENT = 'web-agent',
 }
 
 // in case the `DEFAULT_MODEL` environment variable is not set or set to an unsupported model
 export const fallbackModelID = OpenAgentID.DATA_AGENT;
 
 export const OpenAgents: Record<OpenAgentID, OpenAgent> = {
+  [OpenAgentID.SECURITY_AGENT]: {
+    id: OpenAgentID.SECURITY_AGENT,
+    name: 'Security Agent',
+    maxLength: 12000,
+    tokenLimit: 4000,
+    llm: undefined,
+  },
   [OpenAgentID.DATA_AGENT]: {
     id: OpenAgentID.DATA_AGENT,
     name: 'Data Agent',
@@ -38,13 +46,13 @@ export const OpenAgents: Record<OpenAgentID, OpenAgent> = {
     tokenLimit: 4000,
     llm: undefined,
   },
-  [OpenAgentID.WEB_AGENT]: {
-    id: OpenAgentID.WEB_AGENT,
-    name: 'Web Agent',
-    maxLength: 1024,
-    tokenLimit: 4000,
-    llm: undefined,
-  },
+  // [OpenAgentID.WEB_AGENT]: {
+  //   id: OpenAgentID.WEB_AGENT,
+  //   name: 'Web Agent',
+  //   maxLength: 1024,
+  //   tokenLimit: 4000,
+  //   llm: undefined,
+  // },
 };
 
 export const OpenAgentList = Object.values(OpenAgents);
